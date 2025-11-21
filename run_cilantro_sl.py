@@ -14,7 +14,7 @@ name = "gene2vec_full_metrics"
 cv = 1
 metrics_dict_path = f"/work/magroup/kaileyhu/res/ablations/cv{cv}/{name}.pkl"
 
-with open("/work/magroup/kaileyhu/datasets/SynLethSampled/all_pairs_NSP_EXP_5x.pkl", "rb") as f:
+with open("data/SL_pairs_sampled.pkl", "rb") as f:
     pair_list = pkl.load(f)
 
 print(f"Running general model without FiLM pretraining using EXP5 CV{cv}")
@@ -45,7 +45,20 @@ d = pd.read_hdf(
 )
 
 pc = pc_module.pair_classifier(d, model_type=pc_module.ModelType.COMBINED)
+all_test, all_train = pc.setup_cv(5, cv=cv)
+
 framework = training_framework.Framework(None, pc, metrics_path=metrics_dict_path)
 
+nn_save_paths = [f"net{i}.pth" for i in range(5)]
+framework.all_test = all_test
+framework.all_train = all_train
 
-framework.run_cv(None, None, cv=cv)
+framework.run_cv(all_test, all_train, cv=cv, nn_save_paths=nn_save_paths)
+
+framework.folds = 5
+
+framework.uncertainty_quantification(
+    training_framework.UQ.MONDRIAN_CONFORMAL,
+    net=nn_save_paths,
+    mondrian_class_dict=None
+)
