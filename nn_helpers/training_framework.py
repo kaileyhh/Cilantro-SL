@@ -29,19 +29,12 @@ class Framework:
         self.metrics_path = metrics_path
         self.metrics = {}
 
-        with open(
-            "/work/magroup/kaileyhu/datasets/SynLethSampled/all_pairs_NSP_EXP_5x.pkl",
-            "rb",
-        ) as f:
-            pair_list = pkl.load(f)
-
-        self.pair_list = pair_list
-
     def set_pc(self, pc):
         self.pc = pc
 
     def df_to_SL_embs(
         self,
+        pair_list,
         via_emb_path,
         SL_emb_path,
         batch_size=512,
@@ -66,7 +59,7 @@ class Framework:
     
             self.ve.extract_nn_second_last(df2, via_emb_path)
         
-        self.ve.create_SL_embs(self.pair_list, via_emb_path, SL_emb_path, custom_func=custom_func)
+        self.ve.create_SL_embs(pair_list, via_emb_path, SL_emb_path, custom_func=custom_func)
 
         print("Done with viability embedding extraction")
 
@@ -104,14 +97,16 @@ class Framework:
         if nn_save_paths is None:
             nn_save_paths = [None for i in range(folds)]
 
+        all_probs = []
+
         for i in range(folds):
             self.pc.init_classification(batch_size=batch_size, lr=lr, num_epochs=num_epochs)
             self.pc.setup_dataloaders_from_sets(all_test[i], all_train[i], validation=validation)
             self.pc.train_nn(nn_save_paths[i])
-            vals, corr, _ = self.pc.test_nn()
+            vals, corr, _, probs = self.pc.test_nn()
 
             print(f"\n\nComputing accuracy results for fold {i} / {folds}")
-            precision, recall, f1_score, auc, accuracy, aupr = self.pc.compute_acc(vals, corr)
+            precision, recall, f1_score, auc, accuracy, aupr = self.pc.compute_acc(vals, corr, probs)
             t_precision += precision / folds
             t_recall += recall / folds
             t_f1_score += f1_score / folds
@@ -125,6 +120,7 @@ class Framework:
             auc_list.append(auc)
             acc_list.append(accuracy)
             aupr_list.append(aupr)
+            all_probs.append(probs)
             print(f"Appended results to list")
             print("\n\n")
 
@@ -132,6 +128,8 @@ class Framework:
             f"accuracy,precision,recall,f1 score, auc, aupr\n{t_accuracy}\n{t_precision}\n{t_recall}\n{t_f1_score}\n{t_auc}\n{t_aupr}\n"
         )
         print("\n\n")
+
+        self.metrics[probs] = all_probs
 
         self.metrics["general_results"] = {
             "accuracy": t_accuracy,

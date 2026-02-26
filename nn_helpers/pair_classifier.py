@@ -9,18 +9,16 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from collections import Counter
 
-from sklearn.metrics import roc_auc_score, average_precision_score
+from sklearn.metrics import roc_auc_score, average_precision_score, precision_recall_fscore_support
 
 import numpy as np
 import pandas as pd
 
 import random
 
-sys.path.append("/work/magroup/kaileyhu/synthetic_lethality/")
-
-from prediction.sCilantro.nn_helpers.dataloader import dataset_classifier
-from prediction.sCilantro.nn_helpers.net_layers import SLNet, ESMNet, GeneformerNet, SLNet32
-from prediction.sCilantro.nn_helpers.split import test_train_split, test_train_split_CV1, split_validation
+from dataloader import dataset_classifier
+from net_layers import SLNet, ESMNet, GeneformerNet, SLNet32
+from split import test_train_split, test_train_split_CV1, split_validation
 
 input_length = 64
 
@@ -379,6 +377,7 @@ class pair_classifier:
         vals = []
         corr = []
         conf_scores = []
+        prob_list = []
 
         with torch.no_grad():
             for d in tqdm(self.dl_test):
@@ -398,9 +397,10 @@ class pair_classifier:
                 vals.append(predicted.item())
                 corr.append(labels.item())
                 conf_scores.append(conf.item())
+                prob_list.append(probs)
 
         print(f"Accuracy: {correct / total}")
-        return vals, corr, conf_scores
+        return vals, corr, conf_scores, prob_list
 
     def split_n(self, a, n):
         k, m = divmod(len(a), n)
@@ -513,48 +513,21 @@ class pair_classifier:
         self.train_nn(path)
         self.test_nn()
 
-    def compute_acc(self, preds, labels):
-        true_pos = 0
-        true_neg = 0
-        false_pos = 0
-        false_neg = 0
+    def compute_acc(self, preds, labels, probs):
+        labels = np.asarray(labels).astype(int)
+        preds  = np.asarray(preds).astype(int)
 
-        total = 0
-        correct = 0
+        probs2 = [i.cpu() for i in probs]
+        probs3 = [list(i[0]) for i in probs2]
 
-        for v in range(len(preds)):
-            if labels[v] == 0:
-                if preds[v] == 0:
-                    true_neg += 1
-                else:
-                    false_pos += 1
-
-            elif labels[v] == 1:
-                if preds[v] == 1:
-                    true_pos += 1
-                else:
-                    false_neg += 1
-            if labels[v] == preds[v]:
-                correct += 1
-
-            total += 1
-
-        precision = (true_pos) / (true_pos + false_pos)
-        recall = (true_pos) / (true_pos + false_neg)
-
-        f1_score = (true_pos) / (true_pos + 0.5 * (false_pos + false_neg))
-
-        if true_pos == 0 or true_neg == 0:
-            auc = 0
-        else:
-            auc = roc_auc_score(labels, preds)
-
-        aupr = average_precision_score(labels, preds)
-
-        print(
-            f"Precision: {precision}, Recall: {recall} \nF1 score: {f1_score}, AUC = {auc}, Accuracy = {correct / total}"
+        indicators = np.eye(2)[labels]
+    
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            labels, preds, average="binary", zero_division=0
         )
-        print(
-            f"accuracy,precision,recall,f1 score, auc, aupr\n{correct / total}\n{precision}\n{recall}\n{f1_score}\n{auc}\n{aupr}\n"
-        )
-        return (precision, recall, f1_score, auc, correct / total, aupr)
+    
+        auc  = roc_auc_score(indicators, probs3) if len(np.unique(labels)) == 2 else 0.0
+        aupr = average_precision_score(indicators, probs3) if len(np.unique(labels)) == 2 else 0.0
+    
+        acc = (preds == labels).mean()
+        return precision, recall, f1, auc, acc, aupr

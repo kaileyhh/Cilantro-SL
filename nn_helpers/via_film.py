@@ -15,10 +15,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+from pandarallel import pandarallel
+
+pandarallel.initialize(progress_bar=True)
+
 sys.path.append("/work/magroup/kaileyhu/synthetic_lethality/")
 
-from prediction.sCilantro.nn_helpers.dataloader import dataset, dataset_unlabeled
-from prediction.sCilantro.nn_helpers.net_layers import FiLMNet, FiLMNetTwoRepr
+from dataloader import dataset, dataset_unlabeled
+from net_layers import FiLMNet, FiLMNetTwoRepr
 
 from utils.extract_df_info import *
 
