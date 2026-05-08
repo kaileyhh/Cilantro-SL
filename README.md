@@ -26,14 +26,6 @@ conda activate cilantro_sl
 ```
 
 ## Running the code
-The bulk RNA-seq data must be tokenized into a 2048-length rank-value encoding via Geneformer. The corresponding unperturbed and perturbed embeddings can be extracted using `isp/perturb_2048_SL.py` and `input_setup/data_generator.py` to parse the individual (cell x gene) embeddings into delta embeddings.
+The bulk RNA-seq data must be tokenized into a 2048-length rank-value encoding via Geneformer. 
 
-Next, concatenate this data with any additional gene priors and viability score information to create a pandas DataFrame. The final format of the data have index `('cell line name', 'gene ensembl ID')`. The first 512 columns must be the delta embedding, followed by columns containing the gene embedding, and the last column must be titled `'viability score'` and contain the corresponding viability score for the gene and cell KO.
-
-To run Cilantro-SL, use the following command:
-```
-python run_cilantro_sl.py
-```
-This will:
-1. Conduct pretraining on the delta embedding and any gene prior to produce viability embeddings
-2. Train the SL classifier using generated viabilty embeddings and create calibrated prediction sets and confidence score on testing samples
+To run Cilantro-SL, follow the notebooks in sequence stored in `notebooks`. This will tokenize the data, perform knockouts to generate embeddings using Geneformer, and compile the dataframe necessary for Cilantro-SL. Afterwards, Cilantro-SL can be run using the pretraining notebook and the classification notebook, which contains the uncertainty quantification code.

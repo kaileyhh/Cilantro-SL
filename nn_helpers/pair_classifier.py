@@ -102,7 +102,6 @@ class pair_classifier:
         test_output = torch.randn(128, 2)
         test_labels = torch.randint(0, 2, (128,)).long()
         test_loss = nn.CrossEntropyLoss()(test_output, test_labels)
-        print(f"Test loss with random data: {test_loss}")
         
         class_weights = class_weights.to(self.device)
 
