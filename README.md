@@ -29,3 +29,5 @@ conda activate cilantro_sl
 The bulk RNA-seq data must be tokenized into a 2048-length rank-value encoding via Geneformer. 
 
 To run Cilantro-SL, follow the notebooks in sequence stored in `notebooks`. This will tokenize the data, perform knockouts to generate embeddings using Geneformer, and compile the dataframe necessary for Cilantro-SL. Afterwards, Cilantro-SL can be run using the pretraining notebook and the classification notebook, which contains the uncertainty quantification code.
+
+The modified Geneformer can be found [here](https://github.com/kaileyhh/geneformer) in the `geneformer` directory. The `torch_batch_dir` should be changed to your filepath.
