@@ -19,8 +19,6 @@ from pandarallel import pandarallel
 
 pandarallel.initialize(progress_bar=True)
 
-sys.path.append("/work/magroup/kaileyhu/synthetic_lethality/")
-
 from dataloader import dataset, dataset_unlabeled
 from net_layers import FiLMNet, FiLMNetTwoRepr
 

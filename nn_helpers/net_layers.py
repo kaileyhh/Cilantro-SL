@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from prediction.sCilantro.nn_helpers import film
+import film
 
 ### PAIR CLASSIFICATION NETS
 
